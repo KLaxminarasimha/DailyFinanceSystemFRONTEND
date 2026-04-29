@@ -1,72 +1,118 @@
-import React, { useState } from "react";
-import { loginUser } from "../api/authApi";
+import { useState } from "react";
+import { loginUser } from "../api/auth";
+import { useNavigate } from "react-router-dom";
 
-function Login() {
-  const [form, setForm] = useState({
+export default function Login() {
+  const nav = useNavigate();
+
+  const [data, setData] = useState({
     email: "",
     password: "",
   });
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const handleLogin = async () => {
+    if (!data.email || !data.password) {
+      alert("Please enter email and password");
+      return;
+    }
 
     try {
-      const response = await loginUser(form);
+      setLoading(true);
 
-      console.log(response.data);
+      const res = await loginUser(data);
 
-      const data = response.data.data;
+      console.log("LOGIN RESPONSE:", res.data); // 🔥 DEBUG
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.userId);
-      localStorage.setItem("email", data.email);
-      localStorage.setItem("role", data.role);
+      // 🔐 SAFE TOKEN EXTRACTION (handles all backend formats)
+      const token =
+        res.data?.data?.token ||
+        res.data?.token ||
+        res.data?.data;
+
+      if (!token) {
+        throw new Error("Token not found in response");
+      }
+
+      // ✅ SAVE TOKEN
+      localStorage.setItem("token", token);
 
       alert("Login successful");
-    } catch (error) {
-    console.log("Login error:", error);
-    console.log("Backend response:", error.response?.data);
 
-    alert(
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "Login failed"
-    );
-  }
+      // 🚀 REDIRECT
+      nav("/dashboard");
+
+    } catch (err) {
+      console.log("LOGIN ERROR:", err.response || err.message);
+
+      alert(
+        err.response?.data?.message ||
+        err.response?.data ||
+        err.message ||
+        "Login failed"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div>
+    <div className="container">
       <h2>Login</h2>
 
-      <form onSubmit={submit}>
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          required
-        />
+      {/* EMAIL */}
+      <input
+        placeholder="Email"
+        value={data.email}
+        onChange={(e) =>
+          setData({ ...data, email: e.target.value })
+        }
+      />
 
+      {/* PASSWORD */}
+      <div style={{ position: "relative" }}>
         <input
-          type="password"
-          name="password"
+          type={show ? "text" : "password"}
           placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          required
+          value={data.password}
+          onChange={(e) =>
+            setData({ ...data, password: e.target.value })
+          }
+          style={{ width: "100%" }}
         />
 
-        <button type="submit">Login</button>
-      </form>
+        <span
+          onClick={() => setShow(!show)}
+          style={{
+            position: "absolute",
+            right: "10px",
+            top: "8px",
+            cursor: "pointer",
+            fontSize: "12px",
+            color: "#22c55e",
+          }}
+        >
+          {show ? "Hide" : "Show"}
+        </span>
+      </div>
+
+      {/* LOGIN BUTTON */}
+      <button onClick={handleLogin} disabled={loading}>
+        {loading ? "Logging in..." : "Login"}
+      </button>
+
+      {/* REGISTER LINK */}
+      <p style={{ textAlign: "center", marginTop: "10px" }}>
+        Don't have an account?{" "}
+        <span
+          style={{ color: "#22c55e", cursor: "pointer" }}
+          onClick={() => nav("/")}
+        >
+          Register
+        </span>
+      </p>
     </div>
   );
 }
-
-export default Login;

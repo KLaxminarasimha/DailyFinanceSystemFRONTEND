@@ -1,58 +1,71 @@
-import React, { useState } from "react";
-import { verifyOtp } from "../api/authApi";
+import { useState } from "react";
+import { verifyOtp, resendOtp } from "../api/auth";
+import { useLocation, useNavigate } from "react-router-dom";
 
-function VerifyOtp() {
-  const [email, setEmail] = useState(localStorage.getItem("email") || "");
+export default function VerifyOtp() {
+  const nav = useNavigate();
+  const location = useLocation();
+
+  const email = location.state?.email;
+
   const [otp, setOtp] = useState("");
 
-  const submit = async (e) => {
-  e.preventDefault();
+  const handleVerify = async () => {
+    try {
+      await verifyOtp({ email, otp });
 
-  const payload = {
-    email: email.trim(),
-    otp: otp.trim(),
+      alert("OTP Verified");
+      nav("/login");
+
+    } catch (err) {
+      alert(err.response?.data?.message || "Invalid OTP");
+    }
   };
 
-  console.log("Sending OTP payload:", payload);
-
-  try {
-    await verifyOtp(payload);
-
-    alert("OTP verified successfully");
-    window.location.href = "/login";
-  } catch (error) {
-    console.log("OTP error:", error);
-    console.log("Backend error:", error.response?.data);
-
-    alert("OTP may be verified. Please try login.");
-    window.location.href = "/login";
-  }
-};
+  const handleResend = async () => {
+    try {
+      await resendOtp(email);
+      alert("OTP resent successfully");
+    } catch {
+      alert("Failed to resend OTP");
+    }
+  };
 
   return (
-    <div>
+    <div className="container">
       <h2>Verify OTP</h2>
 
-      <form onSubmit={submit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+      <input
+        placeholder="Enter OTP"
+        onChange={(e) => setOtp(e.target.value)}
+      />
 
-        <input
-          placeholder="Enter OTP"
-          value={otp}
-          onChange={(e) => setOtp(e.target.value)}
-          required
-        />
+      <button onClick={handleVerify}>Verify</button>
 
-        <button type="submit">Verify OTP</button>
-      </form>
+      {/* ✅ RESEND */}
+      <p
+        style={{
+          textAlign: "center",
+          color: "#22c55e",
+          cursor: "pointer",
+          marginTop: "10px"
+        }}
+        onClick={handleResend}
+      >
+        Resend OTP
+      </p>
+
+      {/* ✅ LOGIN OPTION */}
+      <p style={{ textAlign: "center" }}>
+        Already verified?{" "}
+        <span
+          style={{ color: "#22c55e", cursor: "pointer" }}
+          onClick={() => nav("/login")}
+        >
+          Login
+        </span>
+      </p>
+
     </div>
   );
 }
-
-export default VerifyOtp;
