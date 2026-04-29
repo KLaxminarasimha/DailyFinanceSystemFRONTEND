@@ -28,9 +28,16 @@ function Login() {
 
       alert("Login successful");
     } catch (error) {
-      console.log(error);
-      alert(error.response?.data?.message || "Login failed");
-    }
+    console.log("Login error:", error);
+    console.log("Backend response:", error.response?.data);
+
+    alert(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Login failed"
+    );
+  }
   };
 
   return (
