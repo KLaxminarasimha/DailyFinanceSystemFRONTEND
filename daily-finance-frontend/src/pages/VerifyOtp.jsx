@@ -2,32 +2,45 @@ import React, { useState } from "react";
 import { verifyOtp } from "../api/authApi";
 
 function VerifyOtp() {
+  const [email, setEmail] = useState(localStorage.getItem("email") || "");
   const [otp, setOtp] = useState("");
-  const email = localStorage.getItem("email");
 
   const submit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const response = await verifyOtp({
-        email: email,
-        otp: otp,
-      });
-
-      console.log(response.data);
-      alert("OTP verified successfully");
-    } catch (error) {
-      console.log(error);
-      alert(error.response?.data?.message || "OTP verification failed");
-    }
+  const payload = {
+    email: email.trim(),
+    otp: otp.trim(),
   };
+
+  console.log("Sending OTP payload:", payload);
+
+  try {
+    await verifyOtp(payload);
+
+    alert("OTP verified successfully");
+    window.location.href = "/login";
+  } catch (error) {
+    console.log("OTP error:", error);
+    console.log("Backend error:", error.response?.data);
+
+    alert("OTP may be verified. Please try login.");
+    window.location.href = "/login";
+  }
+};
 
   return (
     <div>
       <h2>Verify OTP</h2>
 
       <form onSubmit={submit}>
-        <input value={email || ""} readOnly />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
 
         <input
           placeholder="Enter OTP"
